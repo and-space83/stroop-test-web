@@ -285,6 +285,13 @@ h1 {
   gap: 10px;
 }
 
+.countdown {
+  font-size: 120px;
+  font-weight: 700;
+  color: #7c3aed;
+  line-height: 1;
+}
+
 .phase-intro-title {
   font-size: 28px;
   font-weight: 700;

@@ -67,13 +67,13 @@ function phaseLabel(type: TrialType): string {
 
 const ISI_MS = 300;          // 問題間の空白時間
 const PHASE_INTRO_MS = 1500; // both モードのフェーズ切替時の案内表示時間
+const COUNTDOWN_START = 3;   // テスト開始前のカウントダウン秒数
 
 export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props) {
   const [stimuli] = useState(() => buildStimuli(mode, trialsPerPhase));
   const [trialIndex, setTrialIndex] = useState(0);
-  const [phase, setPhase] = useState<'blank' | 'stimulus' | 'phase-intro'>(
-    mode === 'both' ? 'phase-intro' : 'blank',
-  );
+  const [phase, setPhase] = useState<'countdown' | 'blank' | 'stimulus' | 'phase-intro'>('countdown');
+  const [countdownValue, setCountdownValue] = useState(COUNTDOWN_START);
   const [stimulusShownAt, setStimulusShownAt] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
   const pausedAtRef = useRef<number | null>(null);
@@ -86,6 +86,19 @@ export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props)
 
   const currentStimulus = stimuli[trialIndex];
   const totalTrials = stimuli.length;
+
+  // countdown: 1秒ごとに減算し、1→0 でテストへ遷移（モーダル表示中は停止）
+  useEffect(() => {
+    if (phase !== 'countdown' || showConfirm) return;
+    const timer = setTimeout(() => {
+      if (countdownValue <= 1) {
+        setPhase(mode === 'both' ? 'phase-intro' : 'blank');
+      } else {
+        setCountdownValue(v => v - 1);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [phase, countdownValue, mode, showConfirm]);
 
   // blank -> stimulusへ自動遷移（モーダル表示中は停止）
   useEffect(() => {
@@ -201,6 +214,7 @@ export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props)
       <p className="task-instruction">{instruction}</p>
 
       <div className="stimulus-area">
+        {phase === 'countdown' && <div className="countdown">{countdownValue}</div>}
         {phase === 'phase-intro' && (
           <div className="phase-intro">
             <div className="phase-intro-title">{phaseLabel(currentStimulus.type)}</div>
