@@ -13,9 +13,8 @@ const MODE_LABEL: Record<SessionData['mode'], string> = {
 };
 
 export function Results({ session, onRestart }: Props) {
-  const { participant, mode, trials, correctCount, totalTrials, averageRT, congruentAvgRT, incongruentAvgRT } = session;
+  const { participant, mode, trials, correctCount, totalTrials, averageRT } = session;
   const accuracy = (correctCount / totalTrials) * 100;
-  const stroopEffect = incongruentAvgRT - congruentAvgRT;
   const hasWordTrials = trials.some(t => t.stimulus.type === 'word');
   const hasColorNamingTrials = trials.some(t => t.stimulus.type === 'color-naming');
 
@@ -27,6 +26,9 @@ export function Results({ session, onRestart }: Props) {
   const wordAvgRT = wordTrials.length > 0
     ? wordTrials.reduce((s, t) => s + t.reactionTime, 0) / wordTrials.length
     : 0;
+  // both モードでは Color Naming → Incongruent の差分が干渉量の指標になる
+  const interferenceEffect =
+    hasColorNamingTrials && hasWordTrials ? wordAvgRT - colorNamingAvgRT : null;
 
   const avgJitter = trials.reduce((s, t) => s + t.mouseJitter, 0) / trials.length;
   const avgPathLength = trials.reduce((s, t) => s + t.mousePathLength, 0) / trials.length;
@@ -67,25 +69,11 @@ export function Results({ session, onRestart }: Props) {
           </div>
         )}
 
-        {hasWordTrials && (
+        {interferenceEffect !== null && (
           <div className="result-card">
-            <div className="result-label">ストループ効果</div>
-            <div className="result-value">{stroopEffect.toFixed(0)} ms</div>
-            <div className="result-sub">不一致 − 一致</div>
-          </div>
-        )}
-
-        {hasWordTrials && (
-          <div className="result-card">
-            <div className="result-label">一致条件 平均RT</div>
-            <div className="result-value">{congruentAvgRT.toFixed(0)} ms</div>
-          </div>
-        )}
-
-        {hasWordTrials && (
-          <div className="result-card">
-            <div className="result-label">不一致条件 平均RT</div>
-            <div className="result-value">{incongruentAvgRT.toFixed(0)} ms</div>
+            <div className="result-label">干渉量</div>
+            <div className="result-value">{interferenceEffect.toFixed(0)} ms</div>
+            <div className="result-sub">Incongruent − Color Naming</div>
           </div>
         )}
 

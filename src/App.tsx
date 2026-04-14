@@ -6,7 +6,6 @@ import { Results } from './components/Results';
 import './App.css';
 
 const TOTAL_TRIALS = 20;
-const CONGRUENT_RATIO = 0.5;
 
 function App() {
   const [screen, setScreen] = useState<AppScreen>('form');
@@ -64,7 +63,6 @@ function App() {
         <StroopTask
           mode={mode}
           trialsPerPhase={TOTAL_TRIALS}
-          congruentRatio={CONGRUENT_RATIO}
           onComplete={handleTaskComplete}
         />
       )}

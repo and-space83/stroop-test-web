@@ -6,7 +6,6 @@ import { useInputTracking } from '../hooks/useInputTracking';
 interface Props {
   mode: TestMode;
   trialsPerPhase: number;   // Color Naming / Incongruent 各フェーズの試行数
-  congruentRatio: number;   // word タイプでの一致条件の割合（0〜1）
   onComplete: (trials: TrialData[]) => void;
 }
 
@@ -25,37 +24,31 @@ function generateColorNamingStimuli(count: number): Stimulus[] {
   return stimuli;
 }
 
-function generateWordStimuli(count: number, congruentRatio: number): Stimulus[] {
+function generateWordStimuli(count: number): Stimulus[] {
   const stimuli: Stimulus[] = [];
   for (let i = 0; i < count; i++) {
-    const isCongruent = Math.random() < congruentRatio;
+    // Incongruent モード：常に文字とインク色が異なる
     const wordColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-
-    let wordObj;
-    if (isCongruent) {
-      wordObj = wordColor;
-    } else {
-      const others = COLORS.filter(c => c.name !== wordColor.name);
-      wordObj = others[Math.floor(Math.random() * others.length)];
-    }
+    const others = COLORS.filter(c => c.name !== wordColor.name);
+    const wordObj = others[Math.floor(Math.random() * others.length)];
 
     stimuli.push({
       type: 'word',
       word: wordObj.name,
       wordColor: wordColor.value,
       correctAnswer: wordColor.name,
-      isCongruent,
+      isCongruent: false,
     });
   }
   return stimuli;
 }
 
-function buildStimuli(mode: TestMode, perPhase: number, congruentRatio: number): Stimulus[] {
+function buildStimuli(mode: TestMode, perPhase: number): Stimulus[] {
   if (mode === 'color-naming') return generateColorNamingStimuli(perPhase);
-  if (mode === 'incongruent') return generateWordStimuli(perPhase, congruentRatio);
+  if (mode === 'incongruent') return generateWordStimuli(perPhase);
   return [
     ...generateColorNamingStimuli(perPhase),
-    ...generateWordStimuli(perPhase, congruentRatio),
+    ...generateWordStimuli(perPhase),
   ];
 }
 
@@ -63,8 +56,8 @@ function phaseLabel(type: TrialType): string {
   return type === 'color-naming' ? 'Color Naming' : 'Incongruent Color Naming';
 }
 
-export function StroopTask({ mode, trialsPerPhase, congruentRatio, onComplete }: Props) {
-  const [stimuli] = useState(() => buildStimuli(mode, trialsPerPhase, congruentRatio));
+export function StroopTask({ mode, trialsPerPhase, onComplete }: Props) {
+  const [stimuli] = useState(() => buildStimuli(mode, trialsPerPhase));
   const [trialIndex, setTrialIndex] = useState(0);
   const [phase, setPhase] = useState<'ready' | 'stimulus' | 'feedback' | 'phase-intro'>(
     mode === 'both' ? 'phase-intro' : 'ready',
