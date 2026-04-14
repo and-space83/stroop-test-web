@@ -72,7 +72,9 @@ const COUNTDOWN_START = 3;   // テスト開始前のカウントダウン秒数
 export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props) {
   const [stimuli] = useState(() => buildStimuli(mode, trialsPerPhase));
   const [trialIndex, setTrialIndex] = useState(0);
-  const [phase, setPhase] = useState<'countdown' | 'blank' | 'stimulus' | 'phase-intro'>('countdown');
+  const [phase, setPhase] = useState<'countdown' | 'blank' | 'stimulus' | 'phase-intro' | 'rest'>(
+    mode === 'both' ? 'phase-intro' : 'countdown',
+  );
   const [countdownValue, setCountdownValue] = useState(COUNTDOWN_START);
   const [stimulusShownAt, setStimulusShownAt] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -87,18 +89,18 @@ export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props)
   const currentStimulus = stimuli[trialIndex];
   const totalTrials = stimuli.length;
 
-  // countdown: 1秒ごとに減算し、1→0 でテストへ遷移（モーダル表示中は停止）
+  // countdown: 1秒ごとに減算し、1→0 で blank（本番）へ遷移（モーダル表示中は停止）
   useEffect(() => {
     if (phase !== 'countdown' || showConfirm) return;
     const timer = setTimeout(() => {
       if (countdownValue <= 1) {
-        setPhase(mode === 'both' ? 'phase-intro' : 'blank');
+        setPhase('blank');
       } else {
         setCountdownValue(v => v - 1);
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [phase, countdownValue, mode, showConfirm]);
+  }, [phase, countdownValue, showConfirm]);
 
   // blank -> stimulusへ自動遷移（モーダル表示中は停止）
   useEffect(() => {
@@ -112,10 +114,13 @@ export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props)
     }
   }, [phase, reset, showConfirm]);
 
-  // phase-intro -> blank（モーダル表示中は停止）
+  // phase-intro -> countdown（モード説明のあとカウントダウン開始、モーダル表示中は停止）
   useEffect(() => {
     if (phase === 'phase-intro' && !showConfirm) {
-      const timer = setTimeout(() => setPhase('blank'), PHASE_INTRO_MS);
+      const timer = setTimeout(() => {
+        setCountdownValue(COUNTDOWN_START);
+        setPhase('countdown');
+      }, PHASE_INTRO_MS);
       return () => clearTimeout(timer);
     }
   }, [phase, showConfirm]);
@@ -172,8 +177,13 @@ export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props)
     const crossingBoundary =
       mode === 'both' && stimuli[nextIndex].type !== stimuli[trialIndex].type;
     setTrialIndex(nextIndex);
-    setPhase(crossingBoundary ? 'phase-intro' : 'blank');
+    setPhase(crossingBoundary ? 'rest' : 'blank');
   }, [phase, stimulusShownAt, stimuli, trialIndex, totalTrials, onComplete, mode, getSnapshot]);
+
+  const handleStartNextPhase = () => {
+    setCountdownValue(COUNTDOWN_START);
+    setPhase('phase-intro');
+  };
 
   // キーボード操作：1/2/3/4 キーで色選択（モーダル表示中は無効）
   useEffect(() => {
@@ -219,6 +229,15 @@ export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props)
           <div className="phase-intro">
             <div className="phase-intro-title">{phaseLabel(currentStimulus.type)}</div>
             <div className="phase-intro-sub">{instruction}</div>
+          </div>
+        )}
+        {phase === 'rest' && (
+          <div className="rest-screen">
+            <div className="rest-message">パート1が終了しました</div>
+            <div className="rest-sub">準備ができたらボタンを押して次のテストをはじめてください</div>
+            <button className="btn-primary" type="button" onClick={handleStartNextPhase}>
+              次のテストをはじめる
+            </button>
           </div>
         )}
         {phase === 'stimulus' && currentStimulus.type === 'word' && (
