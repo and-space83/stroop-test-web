@@ -1,0 +1,73 @@
+import { useState } from 'react';
+import type { AppScreen, Participant, SessionData, TrialData } from './types';
+import { ParticipantForm } from './components/ParticipantForm';
+import { StroopTask } from './components/StroopTask';
+import { Results } from './components/Results';
+import './App.css';
+
+const TOTAL_TRIALS = 20;
+const CONGRUENT_RATIO = 0.5;
+
+function App() {
+  const [screen, setScreen] = useState<AppScreen>('form');
+  const [participant, setParticipant] = useState<Participant | null>(null);
+  const [session, setSession] = useState<SessionData | null>(null);
+
+  const handleFormSubmit = (p: Participant) => {
+    setParticipant(p);
+    setScreen('task');
+  };
+
+  const handleTaskComplete = (trials: TrialData[]) => {
+    if (!participant) return;
+
+    const correctCount = trials.filter(t => t.isCorrect).length;
+    const averageRT = trials.reduce((s, t) => s + t.reactionTime, 0) / trials.length;
+    const congruent = trials.filter(t => t.stimulus.isCongruent);
+    const incongruent = trials.filter(t => !t.stimulus.isCongruent);
+    const congruentAvgRT = congruent.length > 0
+      ? congruent.reduce((s, t) => s + t.reactionTime, 0) / congruent.length
+      : 0;
+    const incongruentAvgRT = incongruent.length > 0
+      ? incongruent.reduce((s, t) => s + t.reactionTime, 0) / incongruent.length
+      : 0;
+
+    const sessionData: SessionData = {
+      participant,
+      trials,
+      startedAt: participant.createdAt,
+      finishedAt: Date.now(),
+      totalTrials: trials.length,
+      correctCount,
+      averageRT,
+      congruentAvgRT,
+      incongruentAvgRT,
+    };
+    setSession(sessionData);
+    setScreen('results');
+  };
+
+  const handleRestart = () => {
+    setParticipant(null);
+    setSession(null);
+    setScreen('form');
+  };
+
+  return (
+    <div className="app">
+      {screen === 'form' && <ParticipantForm onSubmit={handleFormSubmit} />}
+      {screen === 'task' && (
+        <StroopTask
+          totalTrials={TOTAL_TRIALS}
+          congruentRatio={CONGRUENT_RATIO}
+          onComplete={handleTaskComplete}
+        />
+      )}
+      {screen === 'results' && session && (
+        <Results session={session} onRestart={handleRestart} />
+      )}
+    </div>
+  );
+}
+
+export default App;
