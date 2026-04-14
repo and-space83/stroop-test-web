@@ -214,13 +214,6 @@ export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props)
         ×
       </button>
 
-      <div className="progress">
-        {mode === 'both' && (
-          <span className="phase-tag">{phaseLabel(currentStimulus.type)} / </span>
-        )}
-        試行 {trialIndex + 1} / {totalTrials}
-      </div>
-
       <p className="task-instruction">{instruction}</p>
 
       <div className="stimulus-area">
