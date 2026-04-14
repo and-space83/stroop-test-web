@@ -8,12 +8,21 @@ export interface Participant {
   createdAt: number;
 }
 
+// テストモード
+export type TestMode = 'color-naming' | 'incongruent' | 'both';
+
+// 試行タイプ
+//  - color-naming: 色のついた丸を出題して色名を答える
+//  - word: 色名の単語を色付きで表示し、そのインク色を答える（従来のストループ）
+export type TrialType = 'color-naming' | 'word';
+
 // 刺激（1試行分の問題）
 export interface Stimulus {
-  word: string;       // 表示する色名
-  wordColor: string;  // 実際のインク色
-  correctAnswer: string; // 正解（インク色）
-  isCongruent: boolean;  // 一致条件かどうか
+  type: TrialType;
+  word: string;       // 表示する色名（type=color-naming では未使用で空文字）
+  wordColor: string;  // 実際のインク色 / 丸の色
+  correctAnswer: string; // 正解（色名）
+  isCongruent: boolean;  // 一致条件かどうか（type=color-naming では常に true 扱い）
 }
 
 // マウスイベントの1点
@@ -78,6 +87,7 @@ export interface TrialData {
 // セッション全体のデータ
 export interface SessionData {
   participant: Participant;
+  mode: TestMode;
   trials: TrialData[];
   startedAt: number;
   finishedAt: number;
@@ -96,5 +106,5 @@ export const COLORS: { name: string; value: string }[] = [
   { name: 'あか', value: '#e63946' },
   { name: 'あお', value: '#1d7fc4' },
   { name: 'みどり', value: '#2a9d5c' },
-  { name: 'き', value: '#f4a211' },
+  { name: 'きいろ', value: '#f4a211' },
 ];

@@ -1,15 +1,31 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { COLORS } from '../types';
-import type { Stimulus, TrialData } from '../types';
+import type { Stimulus, TestMode, TrialData, TrialType } from '../types';
 import { useInputTracking } from '../hooks/useInputTracking';
 
 interface Props {
-  totalTrials: number;
-  congruentRatio: number; // 0〜1（一致条件の割合）
+  mode: TestMode;
+  trialsPerPhase: number;   // Color Naming / Incongruent 各フェーズの試行数
+  congruentRatio: number;   // word タイプでの一致条件の割合（0〜1）
   onComplete: (trials: TrialData[]) => void;
 }
 
-function generateStimuli(count: number, congruentRatio: number): Stimulus[] {
+function generateColorNamingStimuli(count: number): Stimulus[] {
+  const stimuli: Stimulus[] = [];
+  for (let i = 0; i < count; i++) {
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    stimuli.push({
+      type: 'color-naming',
+      word: '',
+      wordColor: color.value,
+      correctAnswer: color.name,
+      isCongruent: true,
+    });
+  }
+  return stimuli;
+}
+
+function generateWordStimuli(count: number, congruentRatio: number): Stimulus[] {
   const stimuli: Stimulus[] = [];
   for (let i = 0; i < count; i++) {
     const isCongruent = Math.random() < congruentRatio;
@@ -24,6 +40,7 @@ function generateStimuli(count: number, congruentRatio: number): Stimulus[] {
     }
 
     stimuli.push({
+      type: 'word',
       word: wordObj.name,
       wordColor: wordColor.value,
       correctAnswer: wordColor.name,
@@ -33,15 +50,33 @@ function generateStimuli(count: number, congruentRatio: number): Stimulus[] {
   return stimuli;
 }
 
-export function StroopTask({ totalTrials, congruentRatio, onComplete }: Props) {
-  const [stimuli] = useState(() => generateStimuli(totalTrials, congruentRatio));
+function buildStimuli(mode: TestMode, perPhase: number, congruentRatio: number): Stimulus[] {
+  if (mode === 'color-naming') return generateColorNamingStimuli(perPhase);
+  if (mode === 'incongruent') return generateWordStimuli(perPhase, congruentRatio);
+  return [
+    ...generateColorNamingStimuli(perPhase),
+    ...generateWordStimuli(perPhase, congruentRatio),
+  ];
+}
+
+function phaseLabel(type: TrialType): string {
+  return type === 'color-naming' ? 'Color Naming' : 'Incongruent Color Naming';
+}
+
+export function StroopTask({ mode, trialsPerPhase, congruentRatio, onComplete }: Props) {
+  const [stimuli] = useState(() => buildStimuli(mode, trialsPerPhase, congruentRatio));
   const [trialIndex, setTrialIndex] = useState(0);
-  const [phase, setPhase] = useState<'ready' | 'stimulus' | 'feedback'>('ready');
+  const [phase, setPhase] = useState<'ready' | 'stimulus' | 'feedback' | 'phase-intro'>(
+    mode === 'both' ? 'phase-intro' : 'ready',
+  );
   const [lastCorrect, setLastCorrect] = useState<boolean | null>(null);
   const [stimulusShownAt, setStimulusShownAt] = useState(0);
 
   const trialsRef = useRef<TrialData[]>([]);
   const { reset, getSnapshot } = useInputTracking(phase === 'stimulus', stimulusShownAt);
+
+  const currentStimulus = stimuli[trialIndex];
+  const totalTrials = stimuli.length;
 
   // ready -> stimulusへ自動遷移
   useEffect(() => {
@@ -55,20 +90,33 @@ export function StroopTask({ totalTrials, congruentRatio, onComplete }: Props) {
     }
   }, [phase, reset]);
 
-  // feedback -> 次の試行 or 完了
+  // phase-intro -> ready
+  useEffect(() => {
+    if (phase === 'phase-intro') {
+      const timer = setTimeout(() => setPhase('ready'), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [phase]);
+
+  // feedback -> 次の試行 or 完了 / フェーズ切替
   useEffect(() => {
     if (phase === 'feedback') {
       const timer = setTimeout(() => {
-        if (trialIndex + 1 >= totalTrials) {
+        const nextIndex = trialIndex + 1;
+        if (nextIndex >= totalTrials) {
           onComplete(trialsRef.current);
-        } else {
-          setTrialIndex(i => i + 1);
-          setPhase('ready');
+          return;
         }
+        setTrialIndex(nextIndex);
+        // both モードでフェーズが切り替わる瞬間は phase-intro を挟む
+        const crossingBoundary =
+          mode === 'both' &&
+          stimuli[nextIndex].type !== stimuli[trialIndex].type;
+        setPhase(crossingBoundary ? 'phase-intro' : 'ready');
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [phase, trialIndex, totalTrials, onComplete]);
+  }, [phase, trialIndex, totalTrials, onComplete, mode, stimuli]);
 
   const handleAnswer = useCallback((response: string) => {
     if (phase !== 'stimulus') return;
@@ -106,23 +154,44 @@ export function StroopTask({ totalTrials, congruentRatio, onComplete }: Props) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [phase, handleAnswer]);
 
-  const currentStimulus = stimuli[trialIndex];
+  const instruction =
+    currentStimulus.type === 'color-naming'
+      ? '表示された丸の色を答えてください'
+      : '表示された文字のインクの色を答えてください';
 
   return (
     <div className="screen task-screen">
       <div className="progress">
+        {mode === 'both' && (
+          <span className="phase-tag">{phaseLabel(currentStimulus.type)} / </span>
+        )}
         試行 {trialIndex + 1} / {totalTrials}
       </div>
 
+      <p className="task-instruction">{instruction}</p>
+
       <div className="stimulus-area">
+        {phase === 'phase-intro' && (
+          <div className="phase-intro">
+            <div className="phase-intro-title">{phaseLabel(currentStimulus.type)}</div>
+            <div className="phase-intro-sub">{instruction}</div>
+          </div>
+        )}
         {phase === 'ready' && <div className="fixation">+</div>}
-        {phase === 'stimulus' && (
+        {phase === 'stimulus' && currentStimulus.type === 'word' && (
           <div
             className="stimulus-word"
             style={{ color: currentStimulus.wordColor }}
           >
             {currentStimulus.word}
           </div>
+        )}
+        {phase === 'stimulus' && currentStimulus.type === 'color-naming' && (
+          <div
+            className="stimulus-circle"
+            style={{ background: currentStimulus.wordColor }}
+            aria-label="colored circle"
+          />
         )}
         {phase === 'feedback' && (
           <div className={`feedback ${lastCorrect ? 'correct' : 'incorrect'}`}>
@@ -146,7 +215,7 @@ export function StroopTask({ totalTrials, congruentRatio, onComplete }: Props) {
         ))}
       </div>
 
-      <p className="hint">ボタンをクリック、または数字キー 1〜4 で回答</p>
+      <p className="hint">ボタンをクリック、または数字キー 1〜{COLORS.length} で回答</p>
     </div>
   );
 }

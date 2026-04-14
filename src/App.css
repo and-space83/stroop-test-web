@@ -85,6 +85,55 @@ h1 {
   cursor: pointer;
 }
 
+.mode-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mode-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  cursor: pointer;
+  background: white;
+  transition: border-color 0.1s ease, background 0.1s ease;
+}
+
+.mode-card:hover {
+  border-color: #0969da;
+}
+
+.mode-card.selected {
+  border-color: #0969da;
+  background: #f0f7ff;
+}
+
+.mode-card input[type="radio"] {
+  margin-top: 3px;
+}
+
+.mode-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mode-card-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #222;
+}
+
+.mode-card-desc {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
+
 .btn-primary {
   background: #0969da;
   color: white;
@@ -147,6 +196,50 @@ h1 {
   font-size: 96px;
   font-weight: 700;
   letter-spacing: 0.1em;
+}
+
+.stimulus-circle {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.phase-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.phase-intro-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0969da;
+}
+
+.phase-intro-sub {
+  font-size: 14px;
+  color: #555;
+}
+
+.phase-tag {
+  color: #0969da;
+  font-weight: 600;
+}
+
+.task-instruction {
+  color: #555;
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.mode-summary {
+  background: #eef6ff;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 12px;
 }
 
 .feedback {

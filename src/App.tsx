@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AppScreen, Participant, SessionData, TrialData } from './types';
+import type { AppScreen, Participant, SessionData, TestMode, TrialData } from './types';
 import { ParticipantForm } from './components/ParticipantForm';
 import { StroopTask } from './components/StroopTask';
 import { Results } from './components/Results';
@@ -11,10 +11,12 @@ const CONGRUENT_RATIO = 0.5;
 function App() {
   const [screen, setScreen] = useState<AppScreen>('form');
   const [participant, setParticipant] = useState<Participant | null>(null);
+  const [mode, setMode] = useState<TestMode>('incongruent');
   const [session, setSession] = useState<SessionData | null>(null);
 
-  const handleFormSubmit = (p: Participant) => {
+  const handleFormSubmit = (p: Participant, selectedMode: TestMode) => {
     setParticipant(p);
+    setMode(selectedMode);
     setScreen('task');
   };
 
@@ -23,8 +25,9 @@ function App() {
 
     const correctCount = trials.filter(t => t.isCorrect).length;
     const averageRT = trials.reduce((s, t) => s + t.reactionTime, 0) / trials.length;
-    const congruent = trials.filter(t => t.stimulus.isCongruent);
-    const incongruent = trials.filter(t => !t.stimulus.isCongruent);
+    const wordTrials = trials.filter(t => t.stimulus.type === 'word');
+    const congruent = wordTrials.filter(t => t.stimulus.isCongruent);
+    const incongruent = wordTrials.filter(t => !t.stimulus.isCongruent);
     const congruentAvgRT = congruent.length > 0
       ? congruent.reduce((s, t) => s + t.reactionTime, 0) / congruent.length
       : 0;
@@ -34,6 +37,7 @@ function App() {
 
     const sessionData: SessionData = {
       participant,
+      mode,
       trials,
       startedAt: participant.createdAt,
       finishedAt: Date.now(),
@@ -58,7 +62,8 @@ function App() {
       {screen === 'form' && <ParticipantForm onSubmit={handleFormSubmit} />}
       {screen === 'task' && (
         <StroopTask
-          totalTrials={TOTAL_TRIALS}
+          mode={mode}
+          trialsPerPhase={TOTAL_TRIALS}
           congruentRatio={CONGRUENT_RATIO}
           onComplete={handleTaskComplete}
         />

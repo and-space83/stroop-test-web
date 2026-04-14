@@ -6,10 +6,27 @@ interface Props {
   onRestart: () => void;
 }
 
+const MODE_LABEL: Record<SessionData['mode'], string> = {
+  'color-naming': 'Color Naming',
+  'incongruent': 'Incongruent Color Naming',
+  'both': 'Both（Color Naming → Incongruent）',
+};
+
 export function Results({ session, onRestart }: Props) {
-  const { participant, trials, correctCount, totalTrials, averageRT, congruentAvgRT, incongruentAvgRT } = session;
+  const { participant, mode, trials, correctCount, totalTrials, averageRT, congruentAvgRT, incongruentAvgRT } = session;
   const accuracy = (correctCount / totalTrials) * 100;
   const stroopEffect = incongruentAvgRT - congruentAvgRT;
+  const hasWordTrials = trials.some(t => t.stimulus.type === 'word');
+  const hasColorNamingTrials = trials.some(t => t.stimulus.type === 'color-naming');
+
+  const colorNamingTrials = trials.filter(t => t.stimulus.type === 'color-naming');
+  const wordTrials = trials.filter(t => t.stimulus.type === 'word');
+  const colorNamingAvgRT = colorNamingTrials.length > 0
+    ? colorNamingTrials.reduce((s, t) => s + t.reactionTime, 0) / colorNamingTrials.length
+    : 0;
+  const wordAvgRT = wordTrials.length > 0
+    ? wordTrials.reduce((s, t) => s + t.reactionTime, 0) / wordTrials.length
+    : 0;
 
   const avgJitter = trials.reduce((s, t) => s + t.mouseJitter, 0) / trials.length;
   const avgPathLength = trials.reduce((s, t) => s + t.mousePathLength, 0) / trials.length;
@@ -17,6 +34,10 @@ export function Results({ session, onRestart }: Props) {
   return (
     <div className="screen results-screen">
       <h1>結果</h1>
+
+      <div className="mode-summary">
+        <strong>モード:</strong> {MODE_LABEL[mode]}
+      </div>
 
       <div className="results-grid">
         <div className="result-card">
@@ -30,21 +51,43 @@ export function Results({ session, onRestart }: Props) {
           <div className="result-value">{averageRT.toFixed(0)} ms</div>
         </div>
 
-        <div className="result-card">
-          <div className="result-label">ストループ効果</div>
-          <div className="result-value">{stroopEffect.toFixed(0)} ms</div>
-          <div className="result-sub">不一致 − 一致</div>
-        </div>
+        {hasColorNamingTrials && (
+          <div className="result-card">
+            <div className="result-label">Color Naming 平均RT</div>
+            <div className="result-value">{colorNamingAvgRT.toFixed(0)} ms</div>
+            <div className="result-sub">{colorNamingTrials.length} 試行</div>
+          </div>
+        )}
 
-        <div className="result-card">
-          <div className="result-label">一致条件 平均RT</div>
-          <div className="result-value">{congruentAvgRT.toFixed(0)} ms</div>
-        </div>
+        {hasWordTrials && (
+          <div className="result-card">
+            <div className="result-label">Incongruent 平均RT</div>
+            <div className="result-value">{wordAvgRT.toFixed(0)} ms</div>
+            <div className="result-sub">{wordTrials.length} 試行</div>
+          </div>
+        )}
 
-        <div className="result-card">
-          <div className="result-label">不一致条件 平均RT</div>
-          <div className="result-value">{incongruentAvgRT.toFixed(0)} ms</div>
-        </div>
+        {hasWordTrials && (
+          <div className="result-card">
+            <div className="result-label">ストループ効果</div>
+            <div className="result-value">{stroopEffect.toFixed(0)} ms</div>
+            <div className="result-sub">不一致 − 一致</div>
+          </div>
+        )}
+
+        {hasWordTrials && (
+          <div className="result-card">
+            <div className="result-label">一致条件 平均RT</div>
+            <div className="result-value">{congruentAvgRT.toFixed(0)} ms</div>
+          </div>
+        )}
+
+        {hasWordTrials && (
+          <div className="result-card">
+            <div className="result-label">不一致条件 平均RT</div>
+            <div className="result-value">{incongruentAvgRT.toFixed(0)} ms</div>
+          </div>
+        )}
 
         <div className="result-card">
           <div className="result-label">マウス平均ジッター</div>

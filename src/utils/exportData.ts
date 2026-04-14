@@ -10,7 +10,8 @@ export function exportSessionJSON(session: SessionData): void {
 export function exportTrialsCSV(session: SessionData): void {
   const headers = [
     'participant_id', 'age', 'gender', 'handedness',
-    'trial_index', 'word', 'word_color', 'correct_answer', 'is_congruent',
+    'mode', 'trial_index', 'trial_type',
+    'word', 'word_color', 'correct_answer', 'is_congruent',
     'response', 'is_correct', 'reaction_time_ms',
     'mouse_jitter', 'mouse_path_length', 'mouse_max_speed',
     'click_count', 'avg_click_distance_from_center', 'avg_press_duration_ms',
@@ -34,7 +35,9 @@ export function exportTrialsCSV(session: SessionData): void {
       session.participant.age,
       session.participant.gender,
       session.participant.handedness,
+      session.mode,
       t.trialIndex,
+      t.stimulus.type,
       t.stimulus.word,
       t.stimulus.wordColor,
       t.stimulus.correctAnswer,
@@ -60,14 +63,16 @@ export function exportTrialsCSV(session: SessionData): void {
 
 // マウス軌跡の詳細CSVをダウンロード（必要に応じて使用）
 export function exportMousePathCSV(session: SessionData): void {
-  const headers = ['participant_id', 'trial_index', 't_ms', 'x', 'y', 'vx', 'vy'].join(',');
+  const headers = ['participant_id', 'mode', 'trial_index', 'trial_type', 't_ms', 'x', 'y', 'vx', 'vy'].join(',');
 
   const rows: string[] = [];
   for (const trial of session.trials) {
     for (const p of trial.mousePath) {
       rows.push([
         session.participant.id,
+        session.mode,
         trial.trialIndex,
+        trial.stimulus.type,
         p.t.toFixed(2),
         p.x,
         p.y,

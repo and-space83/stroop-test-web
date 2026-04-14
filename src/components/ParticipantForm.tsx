@@ -1,15 +1,34 @@
 import { useState } from 'react';
-import type { Participant } from '../types';
+import type { Participant, TestMode } from '../types';
 
 interface Props {
-  onSubmit: (participant: Participant) => void;
+  onSubmit: (participant: Participant, mode: TestMode) => void;
 }
+
+const MODE_OPTIONS: { value: TestMode; label: string; description: string }[] = [
+  {
+    value: 'color-naming',
+    label: 'Color Naming',
+    description: '色のついた丸を見て、その色の名前を答えます。',
+  },
+  {
+    value: 'incongruent',
+    label: 'Incongruent Color Naming',
+    description: '色名の文字が別の色で表示されます。文字のインクの色を答えます。',
+  },
+  {
+    value: 'both',
+    label: 'Both（Color Naming → Incongruent）',
+    description: 'Color Naming を行った後に続けて Incongruent Color Naming を行います。',
+  },
+];
 
 export function ParticipantForm({ onSubmit }: Props) {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState<Participant['gender']>('male');
   const [handedness, setHandedness] = useState<Participant['handedness']>('right');
   const [note, setNote] = useState('');
+  const [mode, setMode] = useState<TestMode>('incongruent');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +40,7 @@ export function ParticipantForm({ onSubmit }: Props) {
       note,
       createdAt: Date.now(),
     };
-    onSubmit(participant);
+    onSubmit(participant, mode);
   };
 
   return (
@@ -32,6 +51,30 @@ export function ParticipantForm({ onSubmit }: Props) {
       </p>
 
       <form onSubmit={handleSubmit} className="participant-form">
+        <div className="form-group">
+          <label>テストモード</label>
+          <div className="mode-group">
+            {MODE_OPTIONS.map(opt => (
+              <label
+                key={opt.value}
+                className={`mode-card ${mode === opt.value ? 'selected' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="mode"
+                  value={opt.value}
+                  checked={mode === opt.value}
+                  onChange={() => setMode(opt.value)}
+                />
+                <div className="mode-card-body">
+                  <div className="mode-card-title">{opt.label}</div>
+                  <div className="mode-card-desc">{opt.description}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div className="form-group">
           <label>年齢</label>
           <input
