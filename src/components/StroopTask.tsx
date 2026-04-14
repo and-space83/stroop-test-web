@@ -56,13 +56,15 @@ function phaseLabel(type: TrialType): string {
   return type === 'color-naming' ? 'Color Naming' : 'Incongruent Color Naming';
 }
 
+const ISI_MS = 300;          // 問題間の空白時間
+const PHASE_INTRO_MS = 1500; // both モードのフェーズ切替時の案内表示時間
+
 export function StroopTask({ mode, trialsPerPhase, onComplete }: Props) {
   const [stimuli] = useState(() => buildStimuli(mode, trialsPerPhase));
   const [trialIndex, setTrialIndex] = useState(0);
-  const [phase, setPhase] = useState<'ready' | 'stimulus' | 'feedback' | 'phase-intro'>(
-    mode === 'both' ? 'phase-intro' : 'ready',
+  const [phase, setPhase] = useState<'blank' | 'stimulus' | 'phase-intro'>(
+    mode === 'both' ? 'phase-intro' : 'blank',
   );
-  const [lastCorrect, setLastCorrect] = useState<boolean | null>(null);
   const [stimulusShownAt, setStimulusShownAt] = useState(0);
 
   const trialsRef = useRef<TrialData[]>([]);
@@ -71,45 +73,25 @@ export function StroopTask({ mode, trialsPerPhase, onComplete }: Props) {
   const currentStimulus = stimuli[trialIndex];
   const totalTrials = stimuli.length;
 
-  // ready -> stimulusへ自動遷移
+  // blank -> stimulusへ自動遷移
   useEffect(() => {
-    if (phase === 'ready') {
+    if (phase === 'blank') {
       const timer = setTimeout(() => {
         reset();
         setStimulusShownAt(performance.now());
         setPhase('stimulus');
-      }, 800);
+      }, ISI_MS);
       return () => clearTimeout(timer);
     }
   }, [phase, reset]);
 
-  // phase-intro -> ready
+  // phase-intro -> blank
   useEffect(() => {
     if (phase === 'phase-intro') {
-      const timer = setTimeout(() => setPhase('ready'), 1500);
+      const timer = setTimeout(() => setPhase('blank'), PHASE_INTRO_MS);
       return () => clearTimeout(timer);
     }
   }, [phase]);
-
-  // feedback -> 次の試行 or 完了 / フェーズ切替
-  useEffect(() => {
-    if (phase === 'feedback') {
-      const timer = setTimeout(() => {
-        const nextIndex = trialIndex + 1;
-        if (nextIndex >= totalTrials) {
-          onComplete(trialsRef.current);
-          return;
-        }
-        setTrialIndex(nextIndex);
-        // both モードでフェーズが切り替わる瞬間は phase-intro を挟む
-        const crossingBoundary =
-          mode === 'both' &&
-          stimuli[nextIndex].type !== stimuli[trialIndex].type;
-        setPhase(crossingBoundary ? 'phase-intro' : 'ready');
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [phase, trialIndex, totalTrials, onComplete, mode, stimuli]);
 
   const handleAnswer = useCallback((response: string) => {
     if (phase !== 'stimulus') return;
@@ -130,9 +112,17 @@ export function StroopTask({ mode, trialsPerPhase, onComplete }: Props) {
     };
 
     trialsRef.current.push(trial);
-    setLastCorrect(isCorrect);
-    setPhase('feedback');
-  }, [phase, stimulusShownAt, stimuli, trialIndex, getSnapshot]);
+
+    const nextIndex = trialIndex + 1;
+    if (nextIndex >= totalTrials) {
+      onComplete(trialsRef.current);
+      return;
+    }
+    const crossingBoundary =
+      mode === 'both' && stimuli[nextIndex].type !== stimuli[trialIndex].type;
+    setTrialIndex(nextIndex);
+    setPhase(crossingBoundary ? 'phase-intro' : 'blank');
+  }, [phase, stimulusShownAt, stimuli, trialIndex, totalTrials, onComplete, mode, getSnapshot]);
 
   // キーボード操作：1/2/3/4 キーで色選択
   useEffect(() => {
@@ -170,7 +160,6 @@ export function StroopTask({ mode, trialsPerPhase, onComplete }: Props) {
             <div className="phase-intro-sub">{instruction}</div>
           </div>
         )}
-        {phase === 'ready' && <div className="fixation">+</div>}
         {phase === 'stimulus' && currentStimulus.type === 'word' && (
           <div
             className="stimulus-word"
@@ -185,11 +174,6 @@ export function StroopTask({ mode, trialsPerPhase, onComplete }: Props) {
             style={{ background: currentStimulus.wordColor }}
             aria-label="colored circle"
           />
-        )}
-        {phase === 'feedback' && (
-          <div className={`feedback ${lastCorrect ? 'correct' : 'incorrect'}`}>
-            {lastCorrect ? '◯' : '✕'}
-          </div>
         )}
       </div>
 
