@@ -93,8 +93,8 @@ export type AppScreen = 'form' | 'task' | 'results';
 
 // カラー定数
 export const COLORS: { name: string; value: string }[] = [
-  { name: '赤', value: '#e63946' },
-  { name: '青', value: '#1d7fc4' },
-  { name: '緑', value: '#2a9d5c' },
-  { name: '黄', value: '#f4a211' },
+  { name: 'あか', value: '#e63946' },
+  { name: 'あお', value: '#1d7fc4' },
+  { name: 'みどり', value: '#2a9d5c' },
+  { name: 'き', value: '#f4a211' },
 ];
