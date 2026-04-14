@@ -9,6 +9,12 @@ interface Props {
   onComplete: (trials: TrialData[]) => void;
 }
 
+const STIMULUS_OFFSETS_X = [-50, 0, 50] as const;
+
+function randomOffsetX(): number {
+  return STIMULUS_OFFSETS_X[Math.floor(Math.random() * STIMULUS_OFFSETS_X.length)];
+}
+
 function generateColorNamingStimuli(count: number): Stimulus[] {
   const stimuli: Stimulus[] = [];
   for (let i = 0; i < count; i++) {
@@ -19,6 +25,7 @@ function generateColorNamingStimuli(count: number): Stimulus[] {
       wordColor: color.value,
       correctAnswer: color.name,
       isCongruent: true,
+      offsetX: randomOffsetX(),
     });
   }
   return stimuli;
@@ -38,6 +45,7 @@ function generateWordStimuli(count: number): Stimulus[] {
       wordColor: wordColor.value,
       correctAnswer: wordColor.name,
       isCongruent: false,
+      offsetX: randomOffsetX(),
     });
   }
   return stimuli;
@@ -163,7 +171,10 @@ export function StroopTask({ mode, trialsPerPhase, onComplete }: Props) {
         {phase === 'stimulus' && currentStimulus.type === 'word' && (
           <div
             className="stimulus-word"
-            style={{ color: currentStimulus.wordColor }}
+            style={{
+              color: currentStimulus.wordColor,
+              transform: `translateX(${currentStimulus.offsetX}px)`,
+            }}
           >
             {currentStimulus.word}
           </div>
@@ -171,7 +182,10 @@ export function StroopTask({ mode, trialsPerPhase, onComplete }: Props) {
         {phase === 'stimulus' && currentStimulus.type === 'color-naming' && (
           <div
             className="stimulus-circle"
-            style={{ background: currentStimulus.wordColor }}
+            style={{
+              background: currentStimulus.wordColor,
+              transform: `translateX(${currentStimulus.offsetX}px)`,
+            }}
             aria-label="colored circle"
           />
         )}
@@ -184,7 +198,6 @@ export function StroopTask({ mode, trialsPerPhase, onComplete }: Props) {
             className="answer-btn"
             onClick={() => handleAnswer(c.name)}
             disabled={phase !== 'stimulus'}
-            style={{ borderColor: c.value }}
           >
             <span className="key-hint">{i + 1}</span>
             <span className="btn-label">{c.name}</span>

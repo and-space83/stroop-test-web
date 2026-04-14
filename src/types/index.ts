@@ -23,6 +23,7 @@ export interface Stimulus {
   wordColor: string;  // 実際のインク色 / 丸の色
   correctAnswer: string; // 正解（色名）
   isCongruent: boolean;  // 一致条件かどうか（type=color-naming では常に true 扱い）
+  offsetX: number;   // 表示位置の中心からのX方向オフセット(px)：-50 / 0 / 50
 }
 
 // マウスイベントの1点

@@ -11,7 +11,7 @@ export function exportTrialsCSV(session: SessionData): void {
   const headers = [
     'participant_id', 'age', 'gender', 'handedness',
     'mode', 'trial_index', 'trial_type',
-    'word', 'word_color', 'correct_answer', 'is_congruent',
+    'word', 'word_color', 'correct_answer', 'is_congruent', 'offset_x',
     'response', 'is_correct', 'reaction_time_ms',
     'mouse_jitter', 'mouse_path_length', 'mouse_max_speed',
     'click_count', 'avg_click_distance_from_center', 'avg_press_duration_ms',
@@ -42,6 +42,7 @@ export function exportTrialsCSV(session: SessionData): void {
       t.stimulus.wordColor,
       t.stimulus.correctAnswer,
       t.stimulus.isCongruent ? 1 : 0,
+      t.stimulus.offsetX,
       t.response,
       t.isCorrect ? 1 : 0,
       t.reactionTime.toFixed(2),

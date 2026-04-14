@@ -193,14 +193,14 @@ h1 {
 }
 
 .stimulus-word {
-  font-size: 96px;
+  font-size: 70px;
   font-weight: 700;
   letter-spacing: 0.1em;
 }
 
 .stimulus-circle {
-  width: 160px;
-  height: 160px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
