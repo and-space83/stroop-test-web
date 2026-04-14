@@ -56,6 +56,12 @@ function App() {
     setScreen('form');
   };
 
+  const handleAbort = () => {
+    setParticipant(null);
+    setSession(null);
+    setScreen('form');
+  };
+
   return (
     <div className="app">
       {screen === 'form' && <ParticipantForm onSubmit={handleFormSubmit} />}
@@ -64,6 +70,7 @@ function App() {
           mode={mode}
           trialsPerPhase={TOTAL_TRIALS}
           onComplete={handleTaskComplete}
+          onAbort={handleAbort}
         />
       )}
       {screen === 'results' && session && (
