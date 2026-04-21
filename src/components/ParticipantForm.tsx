@@ -1,80 +1,68 @@
 import { useState } from 'react';
-import type { Participant, TestMode } from '../types';
+import type { Participant } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface Props {
-  onSubmit: (participant: Participant, mode: TestMode) => void;
+  authUserId: string;
+  isGuest: boolean;
+  authProvider: string;
+  email: string | null;
+  onSaved: (participant: Participant) => void;
 }
 
-const MODE_OPTIONS: { value: TestMode; label: string; description: string }[] = [
-  {
-    value: 'color-naming',
-    label: 'Color Naming',
-    description: '色のついた丸を見て、その色の名前を答えます。',
-  },
-  {
-    value: 'incongruent',
-    label: 'Incongruent Color Naming',
-    description: '色名の文字が別の色で表示されます。文字のインクの色を答えます。',
-  },
-  {
-    value: 'both',
-    label: 'Both（Color Naming → Incongruent）',
-    description: 'Color Naming を行った後に続けて Incongruent Color Naming を行います。',
-  },
-];
-
-export function ParticipantForm({ onSubmit }: Props) {
+export function ParticipantForm({ authUserId, isGuest, authProvider, email, onSaved }: Props) {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState<Participant['gender']>('male');
   const [handedness, setHandedness] = useState<Participant['handedness']>('right');
-  const [note, setNote] = useState('');
-  const [mode, setMode] = useState<TestMode>('incongruent');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const participant: Participant = {
-      id: `P${Date.now()}`,
-      age: Number(age),
-      gender,
-      handedness,
-      note,
-      createdAt: Date.now(),
-    };
-    onSubmit(participant, mode);
+    setSaving(true);
+    setError('');
+
+    try {
+      const { data, error: dbError } = await supabase
+        .from('participants')
+        .insert({
+          auth_user_id: authUserId,
+          age: Number(age),
+          gender,
+          handedness,
+          is_guest: isGuest,
+          auth_provider: authProvider,
+          email,
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      const participant: Participant = {
+        id: data.id,
+        age: data.age,
+        gender: data.gender as Participant['gender'],
+        handedness: data.handedness as Participant['handedness'],
+        createdAt: new Date(data.created_at).getTime(),
+      };
+
+      onSaved(participant);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '保存に失敗しました');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="screen form-screen">
-      <h1>ストループテスト</h1>
+      <h1>被験者情報の入力</h1>
       <p className="description">
-        画面に表示される文字の<strong>インクの色</strong>をボタンで選んでください。
+        初回のみ入力が必要です。以降はこの画面はスキップされます。
       </p>
 
       <form onSubmit={handleSubmit} className="participant-form">
-        <div className="form-group">
-          <label>テストモード</label>
-          <div className="mode-group">
-            {MODE_OPTIONS.map(opt => (
-              <label
-                key={opt.value}
-                className={`mode-card ${mode === opt.value ? 'selected' : ''}`}
-              >
-                <input
-                  type="radio"
-                  name="mode"
-                  value={opt.value}
-                  checked={mode === opt.value}
-                  onChange={() => setMode(opt.value)}
-                />
-                <div className="mode-card-body">
-                  <div className="mode-card-title">{opt.label}</div>
-                  <div className="mode-card-desc">{opt.description}</div>
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
-
         <div className="form-group">
           <label>年齢</label>
           <input
@@ -85,6 +73,7 @@ export function ParticipantForm({ onSubmit }: Props) {
             onChange={e => setAge(e.target.value)}
             required
             placeholder="例: 25"
+            disabled={saving}
           />
         </div>
 
@@ -99,6 +88,7 @@ export function ParticipantForm({ onSubmit }: Props) {
                   value={v}
                   checked={gender === v}
                   onChange={() => setGender(v)}
+                  disabled={saving}
                 />
                 {v === 'male' ? '男性' : v === 'female' ? '女性' : 'その他'}
               </label>
@@ -117,6 +107,7 @@ export function ParticipantForm({ onSubmit }: Props) {
                   value={v}
                   checked={handedness === v}
                   onChange={() => setHandedness(v)}
+                  disabled={saving}
                 />
                 {v === 'right' ? '右利き' : '左利き'}
               </label>
@@ -124,18 +115,10 @@ export function ParticipantForm({ onSubmit }: Props) {
           </div>
         </div>
 
-        <div className="form-group">
-          <label>備考（任意）</label>
-          <input
-            type="text"
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            placeholder="例: 症例名・測定日など"
-          />
-        </div>
+        {error && <div className="auth-error">{error}</div>}
 
-        <button type="submit" className="btn-primary" disabled={!age}>
-          テストを開始する
+        <button type="submit" className="btn-primary" disabled={!age || saving}>
+          {saving ? '保存中...' : '保存して次へ'}
         </button>
       </form>
     </div>

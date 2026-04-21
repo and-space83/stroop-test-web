@@ -447,3 +447,209 @@ h1 {
   gap: 8px;
   margin-bottom: 20px;
 }
+
+/* Loading */
+.loading-screen {
+  text-align: center;
+  color: #666;
+  font-size: 16px;
+}
+
+/* Auth Screen */
+.auth-screen {
+  text-align: center;
+}
+
+.auth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.btn-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 20px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.1s ease, background 0.1s ease;
+  background: white;
+}
+
+.btn-auth:hover:not(:disabled) {
+  border-color: #0969da;
+  background: #f0f7ff;
+}
+
+.btn-auth:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-auth-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #222;
+}
+
+.btn-auth-desc {
+  font-size: 13px;
+  color: #666;
+}
+
+.btn-guest {
+  border-color: #2a9d5c;
+}
+
+.btn-guest:hover:not(:disabled) {
+  border-color: #2a9d5c;
+  background: #f0faf4;
+}
+
+.btn-google {
+  border-color: #4285f4;
+}
+
+.btn-google:hover:not(:disabled) {
+  border-color: #4285f4;
+  background: #f0f4ff;
+}
+
+.btn-email {
+  border-color: #6b7280;
+}
+
+.btn-email:hover:not(:disabled) {
+  border-color: #6b7280;
+  background: #f5f5f5;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.auth-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: left;
+}
+
+.auth-switch {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #666;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #0969da;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: #0860c7;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 12px;
+  padding: 8px 16px;
+}
+
+.btn-back:hover {
+  color: #222;
+}
+
+/* Mode Select Header */
+.mode-select-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mode-select-header h1 {
+  margin: 0;
+}
+
+.btn-signout {
+  background: none;
+  border: 1px solid #d0d7de;
+  color: #666;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-signout:hover {
+  background: #f5f5f5;
+  color: #222;
+}
+
+.participant-badge {
+  background: #eef6ff;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Upgrade Modal */
+.upgrade-modal {
+  max-width: 400px;
+  text-align: center;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.modal-description {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 20px;
+}
+
+.upgrade-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-skip {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px;
+  margin-top: 4px;
+}
+
+.btn-skip:hover {
+  color: #222;
+}

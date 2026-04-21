@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import type { SessionData } from '../types';
 import { exportSessionJSON, exportTrialsCSV, exportMousePathCSV } from '../utils/exportData';
+import { UpgradeAccountModal } from './UpgradeAccountModal';
 
 interface Props {
   session: SessionData;
   onRestart: () => void;
+  isGuest: boolean;
+  onLinkGoogle: () => Promise<void>;
+  onLinkEmail: (email: string, password: string) => Promise<void>;
 }
 
 const MODE_LABEL: Record<SessionData['mode'], string> = {
@@ -12,7 +17,8 @@ const MODE_LABEL: Record<SessionData['mode'], string> = {
   'both': 'Both（Color Naming → Incongruent）',
 };
 
-export function Results({ session, onRestart }: Props) {
+export function Results({ session, onRestart, isGuest, onLinkGoogle, onLinkEmail }: Props) {
+  const [showUpgrade, setShowUpgrade] = useState(isGuest);
   const { participant, mode, trials, correctCount, totalTrials, averageRT } = session;
   const accuracy = (correctCount / totalTrials) * 100;
   const hasWordTrials = trials.some(t => t.stimulus.type === 'word');
@@ -93,7 +99,7 @@ export function Results({ session, onRestart }: Props) {
         <strong>被験者:</strong> {participant.id} / {participant.age}歳 / {
           participant.gender === 'male' ? '男性' : participant.gender === 'female' ? '女性' : 'その他'
         } / {participant.handedness === 'right' ? '右利き' : '左利き'}
-        {participant.note && <> / {participant.note}</>}
+        {session.note && <> / {session.note}</>}
       </div>
 
       <div className="export-buttons">
@@ -111,6 +117,14 @@ export function Results({ session, onRestart }: Props) {
       <button className="btn-primary" onClick={onRestart}>
         新しいセッションを開始
       </button>
+
+      {showUpgrade && (
+        <UpgradeAccountModal
+          onLinkGoogle={onLinkGoogle}
+          onLinkEmail={onLinkEmail}
+          onClose={() => setShowUpgrade(false)}
+        />
+      )}
     </div>
   );
 }

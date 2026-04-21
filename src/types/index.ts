@@ -4,7 +4,6 @@ export interface Participant {
   age: number;
   gender: 'male' | 'female' | 'other';
   handedness: 'right' | 'left';
-  note: string;
   createdAt: number;
 }
 
@@ -89,6 +88,7 @@ export interface TrialData {
 export interface SessionData {
   participant: Participant;
   mode: TestMode;
+  note: string;
   trials: TrialData[];
   startedAt: number;
   finishedAt: number;
@@ -100,7 +100,7 @@ export interface SessionData {
 }
 
 // 画面状態
-export type AppScreen = 'form' | 'task' | 'results';
+export type AppScreen = 'auth' | 'form' | 'mode-select' | 'task' | 'results';
 
 // カラー定数
 export const COLORS: { name: string; value: string }[] = [
