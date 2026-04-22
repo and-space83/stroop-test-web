@@ -2,10 +2,12 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { COLORS } from '../types';
 import type { Stimulus, TestMode, TrialData, TrialType } from '../types';
 import { useInputTracking } from '../hooks/useInputTracking';
+import { sendTrialData } from '../utils/sendData';
 
 interface Props {
   mode: TestMode;
   trialsPerPhase: number;   // Color Naming / Incongruent 各フェーズの試行数
+  sessionId: string | null;  // DB のセッションID（null の場合は送信しない）
   onComplete: (trials: TrialData[]) => void;
   onAbort: () => void;      // 途中中止：テスト開始前の画面へ戻る
 }
@@ -69,7 +71,7 @@ const ISI_MS = 300;          // 問題間の空白時間
 const PHASE_INTRO_MS = 1500; // both モードのフェーズ切替時の案内表示時間
 const COUNTDOWN_START = 3;   // テスト開始前のカウントダウン秒数
 
-export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props) {
+export function StroopTask({ mode, trialsPerPhase, sessionId, onComplete, onAbort }: Props) {
   const [stimuli] = useState(() => buildStimuli(mode, trialsPerPhase));
   const [trialIndex, setTrialIndex] = useState(0);
   const [phase, setPhase] = useState<'countdown' | 'blank' | 'stimulus' | 'phase-intro' | 'rest'>(
@@ -169,6 +171,13 @@ export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props)
 
     trialsRef.current.push(trial);
 
+    // 試行データを DB に非同期送信（失敗時は localStorage にバッファ）
+    if (sessionId) {
+      sendTrialData(sessionId, trial).catch(err => {
+        console.error('Failed to send trial data:', err);
+      });
+    }
+
     const nextIndex = trialIndex + 1;
     if (nextIndex >= totalTrials) {
       onComplete(trialsRef.current);
@@ -178,7 +187,7 @@ export function StroopTask({ mode, trialsPerPhase, onComplete, onAbort }: Props)
       mode === 'both' && stimuli[nextIndex].type !== stimuli[trialIndex].type;
     setTrialIndex(nextIndex);
     setPhase(crossingBoundary ? 'rest' : 'blank');
-  }, [phase, stimulusShownAt, stimuli, trialIndex, totalTrials, onComplete, mode, getSnapshot]);
+  }, [phase, stimulusShownAt, stimuli, trialIndex, totalTrials, onComplete, mode, getSnapshot, sessionId]);
 
   const handleStartNextPhase = () => {
     setCountdownValue(COUNTDOWN_START);

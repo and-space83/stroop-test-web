@@ -7,6 +7,7 @@ import { ParticipantForm } from './components/ParticipantForm';
 import { ModeSelectScreen } from './components/ModeSelectScreen';
 import { StroopTask } from './components/StroopTask';
 import { Results } from './components/Results';
+import { createSession, completeSession, flushPendingData } from './utils/sendData';
 import './App.css';
 
 const TOTAL_TRIALS = 20;
@@ -17,8 +18,16 @@ function App() {
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [mode, setMode] = useState<TestMode>('incongruent');
   const [note, setNote] = useState('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [session, setSession] = useState<SessionData | null>(null);
   const [loadingParticipant, setLoadingParticipant] = useState(false);
+
+  // 未送信データを再送信
+  useEffect(() => {
+    if (auth.user) {
+      flushPendingData().catch(err => console.error('Failed to flush pending data:', err));
+    }
+  }, [auth.user]);
 
   // 認証状態が変わったら被験者情報を取得
   useEffect(() => {
@@ -60,9 +69,24 @@ function App() {
     setScreen('mode-select');
   };
 
-  const handleModeStart = (selectedMode: TestMode, sessionNote: string) => {
+  const handleModeStart = async (selectedMode: TestMode, sessionNote: string) => {
+    if (!participant) return;
     setMode(selectedMode);
     setNote(sessionNote);
+
+    // DB にセッションを作成（失敗してもテストは続行）
+    try {
+      const id = await createSession({
+        participantId: participant.id,
+        mode: selectedMode,
+        note: sessionNote,
+      });
+      setSessionId(id);
+    } catch (err) {
+      console.error('Failed to create session:', err);
+      setSessionId(null);
+    }
+
     setScreen('task');
   };
 
@@ -96,16 +120,29 @@ function App() {
     };
     setSession(sessionData);
     setScreen('results');
+
+    // DB のセッションを完了状態に更新
+    if (sessionId) {
+      completeSession(sessionId, {
+        totalTrials: trials.length,
+        correctCount,
+        averageRT,
+        congruentAvgRT,
+        incongruentAvgRT,
+      }).catch(err => console.error('Failed to complete session:', err));
+    }
   };
 
   const handleRestart = () => {
     setSession(null);
+    setSessionId(null);
     setNote('');
     setScreen('mode-select');
   };
 
   const handleAbort = () => {
     setSession(null);
+    setSessionId(null);
     setNote('');
     setScreen('mode-select');
   };
@@ -157,6 +194,7 @@ function App() {
         <StroopTask
           mode={mode}
           trialsPerPhase={TOTAL_TRIALS}
+          sessionId={sessionId}
           onComplete={handleTaskComplete}
           onAbort={handleAbort}
         />
