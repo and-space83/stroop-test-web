@@ -18,6 +18,7 @@ export function useInputTracking(active: boolean, stimulusShownAt: number) {
   const motionRef = useRef<MotionSample[]>([]);
   const mouseDownInfoRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const keyDownTimesRef = useRef<Map<string, number>>(new Map());
+  const keyDownIndicesRef = useRef<Map<string, number>>(new Map());
   const prevPointRef = useRef<MousePoint | null>(null);
 
   const reset = useCallback(() => {
@@ -27,6 +28,7 @@ export function useInputTracking(active: boolean, stimulusShownAt: number) {
     motionRef.current = [];
     mouseDownInfoRef.current = null;
     keyDownTimesRef.current.clear();
+    keyDownIndicesRef.current.clear();
     prevPointRef.current = null;
   }, []);
 
@@ -102,24 +104,31 @@ export function useInputTracking(active: boolean, stimulusShownAt: number) {
   }, [active, stimulusShownAt]);
 
   // キーストローク
+  // keydown 時点で配列に push し、keyup で dwellTime を後追い更新する。
+  // （keydown で回答が確定するケースで snapshot にキーストロークが残らないのを防ぐため）
   useEffect(() => {
     if (!active) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!keyDownTimesRef.current.has(e.key)) {
-        keyDownTimesRef.current.set(e.key, performance.now());
+        const now = performance.now();
+        keyDownTimesRef.current.set(e.key, now);
+        keyDownIndicesRef.current.set(e.key, keystrokesRef.current.length);
+        keystrokesRef.current.push({
+          key: e.key,
+          dwellTime: 0,
+          t: now - stimulusShownAt,
+        });
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       const downTime = keyDownTimesRef.current.get(e.key);
-      if (downTime !== undefined) {
-        keystrokesRef.current.push({
-          key: e.key,
-          dwellTime: performance.now() - downTime,
-          t: performance.now() - stimulusShownAt,
-        });
+      const idx = keyDownIndicesRef.current.get(e.key);
+      if (downTime !== undefined && idx !== undefined) {
+        keystrokesRef.current[idx].dwellTime = performance.now() - downTime;
         keyDownTimesRef.current.delete(e.key);
+        keyDownIndicesRef.current.delete(e.key);
       }
     };
 
