@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { SessionData } from '../types';
-import { exportSessionJSON, exportTrialsCSV, exportMousePathCSV } from '../utils/exportData';
 import { UpgradeAccountModal } from './UpgradeAccountModal';
 
 interface Props {
@@ -100,18 +99,6 @@ export function Results({ session, onRestart, isGuest, onLinkGoogle, onLinkEmail
           participant.gender === 'male' ? '男性' : participant.gender === 'female' ? '女性' : 'その他'
         } / {participant.handedness === 'right' ? '右利き' : '左利き'}
         {session.note && <> / {session.note}</>}
-      </div>
-
-      <div className="export-buttons">
-        <button className="btn-secondary" onClick={() => exportTrialsCSV(session)}>
-          試行サマリー CSV
-        </button>
-        <button className="btn-secondary" onClick={() => exportMousePathCSV(session)}>
-          マウス軌跡 CSV
-        </button>
-        <button className="btn-secondary" onClick={() => exportSessionJSON(session)}>
-          全データ JSON
-        </button>
       </div>
 
       <button className="btn-primary" onClick={onRestart}>
