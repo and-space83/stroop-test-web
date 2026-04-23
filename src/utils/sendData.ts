@@ -6,11 +6,9 @@ type TableName = keyof Database['public']['Tables'];
 
 const BUFFER_KEY = 'stroop_pending_sends';
 
-interface PendingItem {
-  table: TableName;
-  data: unknown;
-  createdAt: number;
-}
+type PendingItem =
+  | { op: 'insert'; table: TableName; data: unknown; createdAt: number }
+  | { op: 'update'; table: TableName; data: unknown; match: Record<string, unknown>; createdAt: number };
 
 export interface DeviceInfo {
   userAgent: string;
@@ -39,34 +37,87 @@ export function collectDeviceInfo(): DeviceInfo {
   };
 }
 
-/** localStorage にバッファされた送信待ちデータを再送信 */
+// 並行実行防止フラグ（React StrictMode 下で useEffect が 2 回発火しても
+// flushPendingData が重複実行されないようにする）
+let flushInProgress = false;
+
+/** localStorage にバッファされた送信待ちデータを再送信
+ *
+ * 依存関係を守るため、失敗が出たらその時点で停止し、残りのアイテムを
+ * そのままバッファに戻す。これにより「trial の insert が失敗したのに
+ * 後続の session UPDATE が成功して is_completed が true になる」といった
+ * 不整合を防ぐ。
+ *
+ * 処理中に bufferInsert / bufferUpdate が呼ばれて新しいアイテムが追加されても
+ * 消失しないよう、終了時にバッファを再読込して差分をマージする。
+ */
 export async function flushPendingData(): Promise<void> {
-  const raw = localStorage.getItem(BUFFER_KEY);
-  if (!raw) return;
+  if (flushInProgress) return;
+  flushInProgress = true;
 
-  const items: PendingItem[] = JSON.parse(raw);
-  const remaining: PendingItem[] = [];
+  try {
+    const raw = localStorage.getItem(BUFFER_KEY);
+    if (!raw) return;
 
-  for (const item of items) {
-    // 動的テーブル名のため型チェックをバイパス
-    const { error } = await (supabase.from(item.table) as ReturnType<typeof supabase.from>)
-      .insert(item.data as never);
-    if (error) {
-      remaining.push(item);
+    const items: PendingItem[] = JSON.parse(raw);
+    const remaining: PendingItem[] = [];
+    let stopped = false;
+
+    for (const item of items) {
+      if (stopped) {
+        remaining.push(item);
+        continue;
+      }
+
+      // 動的テーブル名のため型チェックをバイパス
+      const table = supabase.from(item.table) as ReturnType<typeof supabase.from>;
+      let error;
+
+      if (item.op === 'update') {
+        let query = table.update(item.data as never);
+        for (const [key, value] of Object.entries(item.match)) {
+          query = query.eq(key, value);
+        }
+        ({ error } = await query);
+      } else {
+        ({ error } = await table.insert(item.data as never));
+      }
+
+      if (error) {
+        remaining.push(item);
+        stopped = true;
+      }
     }
-  }
 
-  if (remaining.length > 0) {
-    localStorage.setItem(BUFFER_KEY, JSON.stringify(remaining));
-  } else {
-    localStorage.removeItem(BUFFER_KEY);
+    // 処理中に bufferInsert/bufferUpdate で追加されたアイテムを保護するため、
+    // 現在のバッファを再読込し、元の件数以降のインデックスにあるものを
+    // 新規追加分として merge する
+    const currentRaw = localStorage.getItem(BUFFER_KEY);
+    const currentItems: PendingItem[] = currentRaw ? JSON.parse(currentRaw) : [];
+    const newlyAdded = currentItems.slice(items.length);
+    const finalBuffer = [...remaining, ...newlyAdded];
+
+    if (finalBuffer.length > 0) {
+      localStorage.setItem(BUFFER_KEY, JSON.stringify(finalBuffer));
+    } else {
+      localStorage.removeItem(BUFFER_KEY);
+    }
+  } finally {
+    flushInProgress = false;
   }
 }
 
-function bufferToLocalStorage(table: TableName, data: unknown): void {
+function bufferInsert(table: TableName, data: unknown): void {
   const raw = localStorage.getItem(BUFFER_KEY);
   const items: PendingItem[] = raw ? JSON.parse(raw) : [];
-  items.push({ table, data, createdAt: Date.now() });
+  items.push({ op: 'insert', table, data, createdAt: Date.now() });
+  localStorage.setItem(BUFFER_KEY, JSON.stringify(items));
+}
+
+function bufferUpdate(table: TableName, data: unknown, match: Record<string, unknown>): void {
+  const raw = localStorage.getItem(BUFFER_KEY);
+  const items: PendingItem[] = raw ? JSON.parse(raw) : [];
+  items.push({ op: 'update', table, data, match, createdAt: Date.now() });
   localStorage.setItem(BUFFER_KEY, JSON.stringify(items));
 }
 
@@ -120,7 +171,7 @@ export async function sendTrialData(
     .single();
 
   if (trialError) {
-    bufferToLocalStorage('trials', trialRow);
+    bufferInsert('trials', trialRow);
     return;
   }
 
@@ -136,7 +187,7 @@ export async function sendTrialData(
       max_speed: trial.mouseMaxSpeed,
     };
     const { error } = await supabase.from('web_mouse_paths').insert(mouseRow as never);
-    if (error) bufferToLocalStorage('web_mouse_paths', mouseRow);
+    if (error) bufferInsert('web_mouse_paths', mouseRow);
   }
 
   if (trial.clicks.length > 0) {
@@ -146,7 +197,7 @@ export async function sendTrialData(
       event_count: trial.clicks.length,
     };
     const { error } = await supabase.from('web_clicks').insert(clickRow as never);
-    if (error) bufferToLocalStorage('web_clicks', clickRow);
+    if (error) bufferInsert('web_clicks', clickRow);
   }
 
   if (trial.keystrokes.length > 0) {
@@ -156,11 +207,11 @@ export async function sendTrialData(
       event_count: trial.keystrokes.length,
     };
     const { error } = await supabase.from('web_keystrokes').insert(keystrokeRow as never);
-    if (error) bufferToLocalStorage('web_keystrokes', keystrokeRow);
+    if (error) bufferInsert('web_keystrokes', keystrokeRow);
   }
 }
 
-/** セッション完了時に集計データを更新 */
+/** セッション完了時に集計データを更新（失敗時は localStorage にバッファ） */
 export async function completeSession(
   sessionId: string,
   stats: {
@@ -171,20 +222,22 @@ export async function completeSession(
     incongruentAvgRT: number;
   },
 ): Promise<void> {
+  const updateRow = {
+    finished_at: new Date().toISOString(),
+    is_completed: true,
+    total_trials: stats.totalTrials,
+    correct_count: stats.correctCount,
+    average_rt: stats.averageRT,
+    congruent_avg_rt: stats.congruentAvgRT || null,
+    incongruent_avg_rt: stats.incongruentAvgRT || null,
+  };
+
   const { error } = await supabase
     .from('sessions')
-    .update({
-      finished_at: new Date().toISOString(),
-      is_completed: true,
-      total_trials: stats.totalTrials,
-      correct_count: stats.correctCount,
-      average_rt: stats.averageRT,
-      congruent_avg_rt: stats.congruentAvgRT || null,
-      incongruent_avg_rt: stats.incongruentAvgRT || null,
-    })
+    .update(updateRow as never)
     .eq('id', sessionId);
 
   if (error) {
-    console.error('Failed to complete session:', error);
+    bufferUpdate('sessions', updateRow, { id: sessionId });
   }
 }
