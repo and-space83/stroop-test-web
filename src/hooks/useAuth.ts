@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+/** 既に登録済みのメールアドレスで新規登録を試みたときに投げる専用エラー */
+export class EmailAlreadyExistsError extends Error {
+  constructor() {
+    super('このメールアドレスは既に登録されています');
+    this.name = 'EmailAlreadyExistsError';
+  }
+}
+
 interface AuthState {
   session: Session | null;
   user: User | null;
@@ -64,10 +72,18 @@ export function useAuth() {
     if (error) throw error;
   };
 
-  /** メール＋パスワードで新規登録 */
+  /** メール＋パスワードで新規登録
+   *
+   * 既に登録済みのメールでも Supabase はセキュリティ上エラーを返さないが、
+   * data.user.identities が空配列になる仕様を利用して検知し、
+   * EmailAlreadyExistsError を投げる。
+   */
   const signUpWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      throw new EmailAlreadyExistsError();
+    }
   };
 
   /** メール＋パスワードでログイン */

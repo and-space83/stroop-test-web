@@ -25,14 +25,11 @@ export function AuthScreen({
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
-  // ログイン失敗後にパスワードリセット導線を出すための状態
-  const [showResetPrompt, setShowResetPrompt] = useState(false);
 
   const resetState = (mode: AuthMode) => {
     setAuthMode(mode);
     setError('');
     setInfo('');
-    setShowResetPrompt(false);
     setPasswordConfirm('');
   };
 
@@ -45,10 +42,6 @@ export function AuthScreen({
       if (onSuccessInfo) setInfo(onSuccessInfo);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '認証エラーが発生しました');
-      // ログイン失敗時はパスワードリセット導線を表示
-      if (authMode === 'email-login') {
-        setShowResetPrompt(true);
-      }
     } finally {
       setLoading(false);
     }
@@ -69,20 +62,12 @@ export function AuthScreen({
     }
   };
 
-  const handleSendResetEmail = () => {
-    if (!email) {
-      setError('メールアドレスを入力してください');
-      return;
-    }
+  const handleForgotPasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     handleAction(
       () => onResetPasswordForEmail(email),
       'パスワードリセット用のメールを送信しました。受信トレイをご確認ください。',
     );
-  };
-
-  const handleForgotPasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleSendResetEmail();
   };
 
   // パスワード忘れ画面
@@ -183,20 +168,6 @@ export function AuthScreen({
 
           {error && <div className="auth-error">{error}</div>}
           {info && <div className="auth-info">{info}</div>}
-
-          {/* ログイン失敗時のリセット導線 */}
-          {showResetPrompt && !isRegister && (
-            <div className="reset-prompt">
-              <button
-                type="button"
-                className="btn-link"
-                onClick={handleSendResetEmail}
-                disabled={loading}
-              >
-                このメールアドレスにパスワードリセットメールを送る
-              </button>
-            </div>
-          )}
 
           <button
             type="submit"
