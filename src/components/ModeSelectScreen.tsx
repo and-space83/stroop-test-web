@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import type { TestMode } from '../types';
+import { HistoryModal } from './HistoryModal';
 
 interface Props {
   onStart: (mode: TestMode, note: string) => void;
   onSignOut: () => Promise<void>;
   participantLabel: string;
+  participantId: string;
 }
 
 const MODE_OPTIONS: { value: TestMode; label: string; description: string }[] = [
@@ -25,9 +27,15 @@ const MODE_OPTIONS: { value: TestMode; label: string; description: string }[] = 
   },
 ];
 
-export function ModeSelectScreen({ onStart, onSignOut, participantLabel }: Props) {
+export function ModeSelectScreen({
+  onStart,
+  onSignOut,
+  participantLabel,
+  participantId,
+}: Props) {
   const [mode, setMode] = useState<TestMode>('incongruent');
   const [note, setNote] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +46,14 @@ export function ModeSelectScreen({ onStart, onSignOut, participantLabel }: Props
     <div className="screen form-screen">
       <div className="mode-select-header">
         <h1>セッション設定</h1>
-        <button className="btn-signout" onClick={onSignOut}>
-          ログアウト
-        </button>
+        <div className="mode-select-actions">
+          <button className="btn-signout" onClick={() => setShowHistory(true)}>
+            過去の記録
+          </button>
+          <button className="btn-signout" onClick={onSignOut}>
+            ログアウト
+          </button>
+        </div>
       </div>
 
       <div className="participant-badge">
@@ -86,6 +99,13 @@ export function ModeSelectScreen({ onStart, onSignOut, participantLabel }: Props
           テストを開始する
         </button>
       </form>
+
+      {showHistory && (
+        <HistoryModal
+          participantId={participantId}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </div>
   );
 }

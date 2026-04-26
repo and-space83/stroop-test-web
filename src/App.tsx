@@ -197,11 +197,12 @@ function App() {
           onSaved={handleParticipantSaved}
         />
       )}
-      {screen === 'mode-select' && (
+      {screen === 'mode-select' && participant && (
         <ModeSelectScreen
           onStart={handleModeStart}
           onSignOut={auth.signOut}
           participantLabel={participantLabel}
+          participantId={participant.id}
         />
       )}
       {screen === 'task' && (
