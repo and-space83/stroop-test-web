@@ -244,7 +244,6 @@ export function AuthScreen({
     <div className="screen auth-screen">
       <h1>ストループテスト</h1>
       <p className="description">
-        画面に表示される文字の<strong>インクの色</strong>をボタンで選んでください。<br />
         ログイン方法を選択してください。
       </p>
 

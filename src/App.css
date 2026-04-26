@@ -523,7 +523,6 @@ h1 {
 
 .btn-guest {
   border-color: #d1fae5;
-  background: #f0fdf4;
 }
 
 .btn-guest:hover:not(:disabled) {
