@@ -7,6 +7,7 @@ import { ParticipantForm } from './components/ParticipantForm';
 import { ModeSelectScreen } from './components/ModeSelectScreen';
 import { StroopTask } from './components/StroopTask';
 import { Results } from './components/Results';
+import { PasswordRecoveryScreen } from './components/PasswordRecoveryScreen';
 import { createSession, completeSession, flushPendingData } from './utils/sendData';
 import './App.css';
 
@@ -154,6 +155,18 @@ function App() {
         <div className="screen loading-screen">
           <p>読み込み中...</p>
         </div>
+      </div>
+    );
+  }
+
+  // パスワードリセットメールから戻ってきた直後は新パスワード設定画面に強制遷移
+  if (auth.isRecoveringPassword) {
+    return (
+      <div className="app">
+        <PasswordRecoveryScreen
+          onUpdatePassword={auth.updatePassword}
+          onFinish={auth.finishPasswordRecovery}
+        />
       </div>
     );
   }
