@@ -101,7 +101,7 @@ export function Results({ session, onRestart, onSignOut, isGuest, onLinkGoogle, 
       </div>
 
       <div className="participant-summary">
-        <strong>被験者:</strong> {participant.id} / {participant.age}歳 / {
+        <strong>被験者:</strong> {participant.age}歳 / {
           participant.gender === 'male' ? '男性' : participant.gender === 'female' ? '女性' : 'その他'
         } / {participant.handedness === 'right' ? '右利き' : '左利き'}
         {session.note && <> / {session.note}</>}
