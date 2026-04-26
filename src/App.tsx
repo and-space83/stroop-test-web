@@ -217,6 +217,7 @@ function App() {
         <Results
           session={session}
           onRestart={handleRestart}
+          onSignOut={auth.signOut}
           isGuest={auth.isGuest}
           onLinkGoogle={auth.linkGoogle}
           onLinkEmail={auth.linkEmail}

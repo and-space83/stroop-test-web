@@ -5,6 +5,7 @@ import { UpgradeAccountModal } from './UpgradeAccountModal';
 interface Props {
   session: SessionData;
   onRestart: () => void;
+  onSignOut: () => Promise<void>;
   isGuest: boolean;
   onLinkGoogle: () => Promise<void>;
   onLinkEmail: (email: string, password: string) => Promise<void>;
@@ -16,7 +17,7 @@ const MODE_LABEL: Record<SessionData['mode'], string> = {
   'both': 'Both（Color Naming → Incongruent）',
 };
 
-export function Results({ session, onRestart, isGuest, onLinkGoogle, onLinkEmail }: Props) {
+export function Results({ session, onRestart, onSignOut, isGuest, onLinkGoogle, onLinkEmail }: Props) {
   const [showUpgrade, setShowUpgrade] = useState(isGuest);
   const { participant, mode, trials, correctCount, totalTrials, averageRT } = session;
   const accuracy = (correctCount / totalTrials) * 100;
@@ -40,7 +41,12 @@ export function Results({ session, onRestart, isGuest, onLinkGoogle, onLinkEmail
 
   return (
     <div className="screen results-screen">
-      <h1>結果</h1>
+      <div className="results-header">
+        <h1>結果</h1>
+        <button className="btn-signout" onClick={onSignOut}>
+          ログアウト
+        </button>
+      </div>
 
       <div className="mode-summary">
         <strong>モード:</strong> {MODE_LABEL[mode]}

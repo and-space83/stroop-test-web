@@ -719,14 +719,16 @@ h1 {
 }
 
 /* Mode Select Header */
-.mode-select-header {
+.mode-select-header,
+.results-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
 
-.mode-select-header h1 {
+.mode-select-header h1,
+.results-header h1 {
   margin: 0;
 }
 
