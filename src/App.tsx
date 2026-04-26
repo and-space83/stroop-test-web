@@ -172,6 +172,7 @@ function App() {
           onSignInWithGoogle={auth.signInWithGoogle}
           onSignUpWithEmail={auth.signUpWithEmail}
           onSignInWithEmail={auth.signInWithEmail}
+          onResetPasswordForEmail={auth.resetPasswordForEmail}
         />
       )}
       {screen === 'form' && auth.user && (
