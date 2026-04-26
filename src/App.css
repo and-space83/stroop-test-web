@@ -616,6 +616,53 @@ h1 {
   margin-bottom: 20px;
 }
 
+/* Password Input with eye toggle */
+.password-input {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.password-input input {
+  flex: 1;
+  padding: 10px 44px 10px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.password-input input:focus {
+  outline: none;
+  border-color: #0969da;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  border-radius: 4px;
+}
+
+.password-toggle:hover:not(:disabled) {
+  background: #f0f0f0;
+  color: #222;
+}
+
+.password-toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Upgrade Modal */
 .upgrade-modal {
   max-width: 400px;
