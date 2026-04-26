@@ -7,6 +7,7 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   isGuest: boolean;
+  isRecoveringPassword: boolean;
 }
 
 export function useAuth() {
@@ -15,6 +16,7 @@ export function useAuth() {
     user: null,
     loading: true,
     isGuest: false,
+    isRecoveringPassword: false,
   });
 
   useEffect(() => {
@@ -25,18 +27,22 @@ export function useAuth() {
         user: session?.user ?? null,
         loading: false,
         isGuest: session?.user?.is_anonymous ?? false,
+        isRecoveringPassword: false,
       });
     });
 
     // セッション変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setAuthState({
+      (event, session) => {
+        setAuthState(prev => ({
           session,
           user: session?.user ?? null,
           loading: false,
           isGuest: session?.user?.is_anonymous ?? false,
-        });
+          // パスワードリセットメールのリンクから戻ってきた直後は新パスワード設定モード
+          isRecoveringPassword:
+            event === 'PASSWORD_RECOVERY' ? true : prev.isRecoveringPassword,
+        }));
       }
     );
 
@@ -91,6 +97,25 @@ export function useAuth() {
     if (error) throw error;
   };
 
+  /** パスワードリセットメールを送信 */
+  const resetPasswordForEmail = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    if (error) throw error;
+  };
+
+  /** パスワードを更新（リカバリーフロー or 認証済み時のパスワード変更で使用） */
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  };
+
+  /** リカバリーモードを終了（新パスワード設定後に呼ぶ） */
+  const finishPasswordRecovery = () => {
+    setAuthState(prev => ({ ...prev, isRecoveringPassword: false }));
+  };
+
   return {
     ...authState,
     signInAnonymously,
@@ -100,5 +125,8 @@ export function useAuth() {
     signOut,
     linkEmail,
     linkGoogle,
+    resetPasswordForEmail,
+    updatePassword,
+    finishPasswordRecovery,
   };
 }
