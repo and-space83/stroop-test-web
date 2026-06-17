@@ -104,8 +104,8 @@ export type AppScreen = 'auth' | 'form' | 'mode-select' | 'task' | 'results';
 
 // カラー定数
 export const COLORS: { name: string; value: string }[] = [
-  { name: 'あか', value: '#e63946' },
-  { name: 'あお', value: '#1d7fc4' },
-  { name: 'みどり', value: '#2a9d5c' },
-  { name: 'きいろ', value: '#f4a211' },
+  { name: 'あか', value: '#ff0000' },
+  { name: 'あお', value: '#0000ff' },
+  { name: 'みどり', value: '#00ff00' },
+  { name: 'きいろ', value: '#ffff00' },
 ];
