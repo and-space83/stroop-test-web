@@ -106,6 +106,6 @@ export type AppScreen = 'auth' | 'form' | 'mode-select' | 'task' | 'results';
 export const COLORS: { name: string; value: string }[] = [
   { name: 'あか', value: '#ff0000' },
   { name: 'あお', value: '#0000ff' },
-  { name: 'みどり', value: '#00ff00' },
+  { name: 'みどり', value: '#008000' },
   { name: 'きいろ', value: '#ffff00' },
 ];
