@@ -8,9 +8,10 @@ interface Props {
   authProvider: string;
   email: string | null;
   onSaved: (participant: Participant) => void;
+  onSignOut: () => Promise<void>;
 }
 
-export function ParticipantForm({ authUserId, isGuest, authProvider, email, onSaved }: Props) {
+export function ParticipantForm({ authUserId, isGuest, authProvider, email, onSaved, onSignOut }: Props) {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState<Participant['gender']>('male');
   const [handedness, setHandedness] = useState<Participant['handedness']>('right');
@@ -57,7 +58,12 @@ export function ParticipantForm({ authUserId, isGuest, authProvider, email, onSa
 
   return (
     <div className="screen form-screen">
-      <h1>被験者情報の入力</h1>
+      <div className="form-header">
+        <h1>被験者情報の入力</h1>
+        <button type="button" className="btn-signout" onClick={onSignOut}>
+          ログアウト
+        </button>
+      </div>
       <p className="description">
         初回のみ入力が必要です。以降はこの画面はスキップされます。
       </p>

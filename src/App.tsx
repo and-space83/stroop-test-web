@@ -195,6 +195,7 @@ function App() {
           authProvider={auth.user.app_metadata?.provider ?? 'anonymous'}
           email={auth.user.email ?? null}
           onSaved={handleParticipantSaved}
+          onSignOut={auth.signOut}
         />
       )}
       {screen === 'mode-select' && participant && (

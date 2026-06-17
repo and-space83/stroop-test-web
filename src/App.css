@@ -719,7 +719,8 @@ h1 {
 
 /* Mode Select Header */
 .mode-select-header,
-.results-header {
+.results-header,
+.form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -728,7 +729,8 @@ h1 {
 }
 
 .mode-select-header h1,
-.results-header h1 {
+.results-header h1,
+.form-header h1 {
   margin: 0;
 }
 
